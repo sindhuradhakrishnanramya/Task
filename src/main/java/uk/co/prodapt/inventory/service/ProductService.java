@@ -1,8 +1,14 @@
 package uk.co.prodapt.inventory.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uk.co.prodapt.inventory.model.Product;
@@ -69,5 +75,56 @@ public class ProductService {
             }
         }
         return product;
+    }
+    
+    //task1
+    
+    public List<Product> getProducts(boolean availableOnly) {
+        Stream<Product> productStream = products.stream();
+
+        if (availableOnly) {
+            productStream = productStream.filter(product -> product.getId() > 0);
+        }
+
+       
+        return productStream
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(
+                Product::getId,
+                Function.identity(),
+                (existing, duplicate) -> existing,
+                LinkedHashMap::new
+            ))
+            .values()
+            .stream()
+            .collect(Collectors.toList());
+    }
+    
+    //task  2
+    
+    public List<Product> getAvailableProducts(Optional<Boolean> availabilityFilter) {
+        
+        List<Product> snapshot;
+        synchronized (this.products) {
+            snapshot = new ArrayList<>(this.products);
+        }
+
+        
+        Stream<Product> stream = snapshot.stream();
+        if (availabilityFilter.isPresent()) {
+            boolean filterValue = availabilityFilter.get();
+            stream = stream.filter(product -> product.isAvailable() == filterValue);
+        }
+
+         return stream
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(
+                                Product::getId,  
+                                Function.identity(),
+                                (existing, duplicate) -> existing,  
+                                LinkedHashMap::new  
+                        ),
+                        map -> new ArrayList<>(map.values())
+                ));
     }
 }
