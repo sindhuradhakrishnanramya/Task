@@ -1,16 +1,19 @@
 package uk.co.prodapt.inventory.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -69,4 +72,27 @@ public class InventoryController {
     public void delete(@PathVariable Integer id) {
         productService.delete(id);
     }
+    
+    
+    //task1
+        @ApiResponse(responseCode = "200",
+            description = "Successful retrieval of product list",
+            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Product.class)))
+        )
+        @GetMapping("/product")
+        public ResponseEntity<List<Product>> getProducts(
+            @Parameter(description = "If true, only return products that are in stock")
+            @RequestParam(value = "availableOnly", required = false, defaultValue = "false") boolean availableOnly
+        ) {
+            List<Product> products = productService.getProducts(availableOnly);
+            return ResponseEntity.ok(products);
+        }
+        
+        @GetMapping("/products")
+        public ResponseEntity<List<Product>> getProducts(
+                @RequestParam(value = "available", required = false) Boolean available) {
+
+            List<Product> products = productService.getAvailableProducts(Optional.ofNullable(available));
+            return ResponseEntity.ok(products);
+        }
 }
